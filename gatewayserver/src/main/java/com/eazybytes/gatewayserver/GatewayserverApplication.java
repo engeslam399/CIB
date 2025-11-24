@@ -2,6 +2,7 @@ package com.eazybytes.gatewayserver;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
@@ -20,22 +21,34 @@ public class GatewayserverApplication {
 		return routeLocatorBuilder.routes()
 						.route(p -> p
 								.path("/eazybank/accounts/**")
-								.filters( f -> f.rewritePath("/eazybank/accounts/(?<segment>.*)","/${segment}")
-										.addResponseHeader("X-Response-Time", LocalDateTime.now().toString()))
+								.filters( f -> f.rewritePath("/eazybank/accounts/(?<segment>.*)","/${segment}"))
 								.uri("lb://ACCOUNTS"))
 					.route(p -> p
 							.path("/eazybank/loans/**")
-							.filters( f -> f.rewritePath("/eazybank/loans/(?<segment>.*)","/${segment}")
-									.addResponseHeader("X-Response-Time", LocalDateTime.now().toString()))
+							.filters( f -> f.rewritePath("/eazybank/loans/(?<segment>.*)","/${segment}"))
 							.uri("lb://LOANS"))
 					.route(p -> p
 							.path("/eazybank/cards/**")
-							.filters( f -> f.rewritePath("/eazybank/cards/(?<segment>.*)","/${segment}")
-									.addResponseHeader("X-Response-Time", LocalDateTime.now().toString()))
+							.filters( f -> f.rewritePath("/eazybank/cards/(?<segment>.*)","/${segment}"))
 							.uri("lb://CARDS")).build();
 
 
 	}
+
+
+    /**
+     * REAL per-request response time header
+     */
+
+    @Bean
+    public GlobalFilter responseTimeFilter() {
+        return (exchange, chain) -> {
+            exchange.getResponse().getHeaders()
+                    .set("X-Response-Time", LocalDateTime.now().toString());
+            return chain.filter(exchange);
+        };
+    }
+
 
 
 }
